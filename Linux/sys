@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# Loop that checks sudo abilities for each user with a home directory
+for user in $(ls /home)
+do
+    sudo -lu $user
+done
+
+
+# Custom variables
+output=$HOME/research/sys_info.txt
+ip=$(hostname -I)
+execs=($find /home -type f -perm 777)
+commands=('date' 'uname -a' 'hostname -s')
+files=('/etc/passwd' '/etc/shadow' '/etc/hosts')
+
+# Create directory for output
+if [ ! -d $HOME/research ]
+then
+    mkdir $HOME/research
+fi
+
+# Check for file and remove if already created
+if [ -f $output ]
+then
+    > $output
+fi
+
+for x in {0..2};
+do
+    results=$(${commands[$x]})
+    echo "Results of \"${commands[$x]}\" command:"
+    echo $results
+    echo ""
+done
+
+
+# Title and today's date
+echo "Current system information" > $output
+date >> $output
+
+# The uname info for the machine
+echo -e "\nUname: $(uname -a) \n" >> $output
+
+# The machine's IP address
+#echo -e "IP: $(hostname -I) \n" >> $output
+echo -e "IP:" >> $output
+echo -e "$ip \n" >> $output
+
+# Hostname
+echo "Hostname: $hostname -s) " >> $output
+
+# DNS info
+echo "DNS Servers: " >> $output
+cat /etc/resolv.conf >> $output
+
+# Memory info
+echo -e "\nMemory free: " >> $output
+free -h >> $output
+
+# CPU info
+echo -e "\nCPU: " >> $output
+lscpu | grep CPU >> $output
+
+# Disk usage
+echo -e "\nDisk usage: " >> $output
+df -H | head -2 >> $output
+
+# Currently logged on users
+echo -e "\nCurrently logged in users: \n $(who) \n" >> $output
+
+# Find 777 files
+#echo -e "\n777 Files:" >> $output
+#find / -type f -perm 777 >> $output
+echo -e "\nExec Files:" >> $output
+for exec in $execs;
+    echo $execs >> $output
+done
+
+# Find top 10 processes
+echo -e "\nTop 10 Processes" >> $output
+ps aux --sort -%mem | awk '{print $1, $2, $3, $4, $11}' | head >> $output
+
+# Checks if script is run in sudo
+if [ $UID -eq 0 ]
+then 
+    echo "Please do not run this script as root."
+    exit
+fi
+
+# Display file permissions
+echo -e "\nThe permissions for sensitive /etc files: \n" >> $output
+for file in ${files[@]};
+do
+    ls -l $file >> $output
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
